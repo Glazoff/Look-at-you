@@ -7,21 +7,20 @@ export const VideoWindow = () => {
   
   const getUserMedia = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({video: {width: 280, height: 240}, audio: true});
-     
+      const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true}); 
       if(localVideo.current !== null) {
         localVideo.current.srcObject = stream;
       }
-
     } catch (err) {
-      alert('Камера не подключена');
-    }
+      alert('камера отключена');
+    }  
   };
 
   useEffect(() =>{
     getUserMedia();
   },[])
-
+  
+ 
   return(
     <div className="video-window">
       <video ref={localVideo} autoPlay></video>

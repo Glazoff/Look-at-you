@@ -9,6 +9,5 @@ export const PageApp = () => {
       <VideoWindow />
       <MeterMicrophone />
     </div>
-  
   )
 }

@@ -1,49 +1,44 @@
-import React, { useEffect, useState } from "react";
-
-import { MeterIcon } from "../MeterIcon/MeterIcon";
+import React, { useEffect, useRef } from "react";
 
 export const MeterMicrophone = () => {
-  const [volueMic, setVolueMic] = useState<number>(0);
+  const maxVolume = 100;
+  const highVolume = 80;
+  const lowVolume = 69;
+  const refVolume = useRef<HTMLMeterElement | null >(null);
 
 
-  const getUserMedia = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-      
-      const audioContext = new AudioContext();
-      const analyser = audioContext.createAnalyser();
-      const microphone = audioContext.createMediaStreamSource(stream);
-      const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
-
-      analyser.smoothingTimeConstant = 0.8;
-      analyser.fftSize = 1024;
-      microphone.connect(analyser);
-
-      analyser.connect(scriptProcessor);
-      scriptProcessor.connect(audioContext.destination);
-      scriptProcessor.onaudioprocess = function() {
-        const array = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(array);
-        const arraySum = array.reduce((a, value) => a + value, 0);
-        const average = arraySum / array.length;
-        setVolueMic(Math.round(average));
-      };
-
-    } catch (err) {
-      alert('Микрофон не подключен');
+  async function listenToVolume(stream: MediaStream)  {
+    const audioContext = new AudioContext()
+    await audioContext.audioWorklet.addModule('vumeter-processor.js');
+    const microphone = audioContext.createMediaStreamSource(stream);
+    const node = new AudioWorkletNode(audioContext, 'vumeter')
+    node.port.onmessage  = event => {
+      const volue = event.data.volume * 3500;
+      if (refVolume.current !== null) {
+        refVolume.current.value = volue;
+      }
     }
-  };
+    microphone.connect(node).connect(audioContext.destination);
+  }
 
+  async function getVolume () {
+    try {
+     const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+     listenToVolume(stream);
+    } catch(e) {
+      alert('микрофон отключен');
+    }
+  }
 
   useEffect(() => {
-    getUserMedia();
+    getVolume();
   },[])
 
+  
   return(
     <div className="meter-mic">
-      <MeterIcon volue={volueMic}/>
       <h3 className="meter-mic__title">Микрофон</h3>
-      
+      <meter className="meter-mic__meter" ref={refVolume} max={maxVolume}  low={lowVolume} high={highVolume} />
     </div>
   )
 }
