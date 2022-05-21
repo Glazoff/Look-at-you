@@ -32,7 +32,7 @@ export const MeterMicrophone = () => {
 
   useEffect(() => {
     getVolume();
-  },[])
+  })
 
   
   return(
